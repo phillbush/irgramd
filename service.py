@@ -6,6 +6,8 @@
 # Use of this source code is governed by a MIT style license that
 # can be found in the LICENSE file included in this project.
 
+import asyncio
+
 from utils import compact_date, command, HELP
 from telethon import utils as tgutils
 from telethon.errors.rpcerrorlist import SessionPasswordNeededError
@@ -26,6 +28,8 @@ class service(command):
         self.tg = telegram
         self.irc = telegram.irc
         self.tmp_ircnick = None
+        self.tasks_get = set()
+        self.tasks_history = {}
 
     def initial_help(self):
         return (
@@ -146,7 +150,9 @@ class service(command):
             if id is not None:
                 msg = await self.tg.telegram_client.get_messages(entity=peer_id, ids=id)
             if msg is not None:
-                await self.tg.handle_telegram_message(event=None, message=msg, history=True)
+                task = asyncio.create_task(self.tg.handle_telegram_message(event=None, message=msg, history=True))
+                self.tasks_get.add(task)
+                task.add_done_callback(self.tasks_get.discard)
             else:
                 reply = ('Message not found',)
             return reply
@@ -247,9 +253,17 @@ class service(command):
                 li, reply = conv_int(limit)
                 if reply: return reply
 
-            his = await self.tg.telegram_client.get_messages(peer_id, limit=li)
-            for msg in reversed(his):
-                await self.tg.handle_telegram_message(event=None, message=msg, history=True)
+            # listing unread may take too long; do it in background
+            async def list_unread():
+                his = await self.tg.telegram_client.get_messages(peer_id, limit=li)
+                for msg in reversed(his):
+                    await self.tg.handle_telegram_message(event=None, message=msg, history=True)
+            if peer_id in self.tasks_history:
+                return
+            task = asyncio.create_task(list_unread())
+            self.tasks_history[peer_id] = task
+            task.add_done_callback(lambda x: self.tasks_history.pop(peer_id, None))
+
             reply = ()
             return reply
 
