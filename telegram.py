@@ -523,12 +523,10 @@ class TelegramHandler(object):
 
         if received:
             mark = '@'
-            rargs['repl_pref'] = '~'
-            rargs['repl_suff'] = '~'
-        else: # sent
-            mark = ':'
-            rargs['repl_pref'] = '@'
+            rargs['repl_pref'] = ''
             rargs['repl_suff'] = ''
+        else: # sent
+            return text
 
         if text.find(mark) != -1:
             text_replaced = repl_mentioned(text, me_nick, received, mark, **rargs)
