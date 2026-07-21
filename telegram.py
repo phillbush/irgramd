@@ -61,6 +61,7 @@ class TelegramHandler(object):
         self.hist_fmt   = settings['hist_timestamp_format']
         self.timezone   = settings['timezone']
         self.geo_url    = settings['geo_url']
+        self.mark_as_read = settings['mark_as_read']
         if not settings['emoji_ascii']:
             e.emo = {}
         self.token = token('+0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz')
@@ -672,6 +673,13 @@ class TelegramHandler(object):
         text_send = self.set_history_timestamp(text, history, msg.date, msg.action)
         chan = await self.relay_telegram_message(msg, user, text_send)
         await self.history_search_volatile(history, msg.id)
+
+        if self.mark_as_read and chan is not None:
+            irc_chan = chan.lower()
+            for irc_nick in self.irc.conf['irc_nicks']:
+                if irc_nick in self.irc.irc_channels[irc_chan]:
+                    await self.telegram_client.send_read_acknowledge(msg.peer_id, max_id=self.id, clear_mentions=True, clear_reactions=True)
+                    break
 
         self.to_cache(msg.id, mid, msg.message, text, user, chan, msg.media)
         peer = chan if chan else user
