@@ -578,6 +578,11 @@ class IRCHandler(object):
         if not full_join:
             return
 
+        if self.conf['backlog_length'] > 0:
+            await self.service.handle_command_history(
+                peer=real_chan, limit='unread',
+                add_unread=-self.conf['backlog_length'])
+
         op = self.get_irc_op(self.tg.tg_username, channel)
         if op == '@': self.irc_channels_ops[chan].add(user.irc_nick)
         elif op == '~': self.irc_channels_founder[chan].add(user.irc_nick)
