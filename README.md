@@ -1,3 +1,11 @@
+**NOTE:** This is my fork of [irgramd](https://github.com/prsai/irgramd).
+
+I am trying to keep each behavior/interface change in a separate commit,
+so i can cherrypick it on a new branch and send it upstream as a merge request.
+Some commits may not be accepted upstream.
+That's not a problem, i will keep using my fork anyway.
+
+
 # irgramd - IRC <-> Telegram Gateway
 
 irgramd is a gateway that allows connecting from an [IRC] client to
