@@ -291,7 +291,7 @@ class service(command):
             peer_id, reply = self.get_peer_id(peer.lower())
             if reply: return reply
 
-            await self.tg.telegram_client.send_read_acknowledge(peer_id, clear_mentions=True)
+            await self.tg.telegram_client.send_read_acknowledge(peer_id, clear_mentions=True, clear_reactions=True)
             reply = ('',)
         else: # HELP.brief or HELP.desc (first line)
             reply = ('   mark_read   Mark messages as read',)
