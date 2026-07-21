@@ -224,10 +224,10 @@ class service(command):
                 return count, reply
 
             def conv_int(num_str):
-                if num_str.isdigit():
+                try:
                     n = int(num_str)
                     err = None
-                else:
+                except:
                     n = None
                     err = ('Invalid argument',)
                 return n, err
@@ -243,7 +243,10 @@ class service(command):
 
                 li, reply = await get_unread(tgt)
                 if reply: return reply
-                li += add_unread_int
+                if add_unread_int < 0 and li > -add_unread_int:
+                    li = -add_unread_int
+                elif add_unread_int > 0:
+                    li += add_unread_int
             elif add_unread is not None:
                 reply = ('Wrong number of arguments',)
                 return reply
@@ -272,11 +275,12 @@ class service(command):
         if help == HELP.desc:  # rest of HELP.desc
             reply += \
             (
-              '   history <peer> [<limit>|all|unread [<plusN>]]',
+              '   history <peer> [<limit>|all|unread [<plusN>|<minusN>]]',
               'Get last <limit> number of messages already sent to <peer>',
               '(channel or user). If not set <limit> is 10.',
               'Instead of <limit>, "unread" is for messages not marked as read,',
-              'optionally <plusN> number of previous messages to the first unread.',
+              'optionally <plusN> number of previous messages to the first unread,',
+              'or only the last <minusN> unread messages.',
               'Instead of <limit>, "all" is for retrieving all available messages',
               'in <peer>.',
             )
