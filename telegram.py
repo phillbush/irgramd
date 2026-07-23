@@ -71,7 +71,7 @@ class TelegramHandler(object):
         self.id	= None
         self.tg_username = None
         self.channels_date = {}
-        self.mid = mesg_id('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%+./_~')
+        self.mid = mesg_id('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
         self.webpending = {}
         self.refwd_me = False
         self.cache = collections.OrderedDict()
