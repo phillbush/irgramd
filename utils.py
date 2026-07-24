@@ -14,7 +14,6 @@ import datetime
 import zoneinfo
 import difflib
 import logging
-import random
 
 # Constants
 
@@ -242,15 +241,3 @@ def parse_loglevel(level):
 
 def pretty(object):
     return object.stringify() if LOGL.debug and object else object
-
-class token:
-    def __init__(self, alpha):
-        self.alpha = alpha
-        self.long_alpha = len(alpha)
-
-    def gen_token(self, long_token):
-        if long_token == 1:
-            return self.alpha[random.randrange(self.long_alpha)]
-        else:
-            aux = self.gen_token(long_token - 1)
-            return aux + self.alpha[random.randrange(self.long_alpha)]
