@@ -243,8 +243,11 @@ class TelegramHandler(object):
             chan += '_'
         return chan
 
-    def get_irc_user_from_telegram(self, tid):
-        nick = self.tid_to_iid[tid]
+    async def get_irc_user_from_telegram(self, tid):
+        user = await self.telegram_client.get_entity(tid)
+        if not isinstance(user, tgty.User):
+            return self.irc.service_user
+        nick = self.set_ircuser_from_telegram(user)
         if nick == self.tg_username: return None
         return self.irc.users[nick.lower()]
 
@@ -265,7 +268,7 @@ class TelegramHandler(object):
             peer_id, type = self.get_peer_id_and_type(from_id)
             if type == 'user':
                 try:
-                    user = self.get_irc_user_from_telegram(peer_id)
+                    user = await self.get_irc_user_from_telegram(peer_id)
                 except:
                     name = str(peer_id)
                 else:
@@ -542,7 +545,7 @@ class TelegramHandler(object):
         self.sorted_len_usernames.append(username)
         self.sorted_len_usernames.sort(key=lambda k: len(k), reverse=True)
 
-    def format_reaction(self, msg, message_rendered, edition_case, reaction):
+    async def format_reaction(self, msg, message_rendered, edition_case, reaction):
         react_quote_len = self.quote_len * 2
         if len(message_rendered) > react_quote_len:
             text_old = '{}...'.format(message_rendered[:react_quote_len])
@@ -551,12 +554,12 @@ class TelegramHandler(object):
             text_old = message_rendered
 
         if edition_case == 'react-add':
-            user = self.get_irc_user_from_telegram(reaction.peer_id.user_id)
+            user = await self.get_irc_user_from_telegram(reaction.peer_id.user_id)
             emoji = reaction.reaction.emoticon
             react_action = '+'
             react_icon = e.emo[emoji] if emoji in e.emo else emoji
         elif edition_case == 'react-del':
-            user = self.get_irc_user_from_telegram(msg.sender_id)
+            user = await self.get_irc_user_from_telegram(msg.sender_id)
             react_action = '-'
             react_icon = ''
         return text_old, '{}{}'.format(react_action, react_icon), user
@@ -573,7 +576,7 @@ class TelegramHandler(object):
         edition_case, reaction = await self.edition_case(event.message)
         if edition_case == 'edition':
             action = 'Edited'
-            user = self.get_irc_user_from_telegram(event.sender_id)
+            user = await self.get_irc_user_from_telegram(event.sender_id)
             if id in self.cache:
                 t = self.filters(self.cache[id]['text'])
                 rt = self.cache[id]['rendered_text']
@@ -601,7 +604,7 @@ class TelegramHandler(object):
                     return
                 self.last_reaction = reaction.date
             action = 'React'
-            text_old, edition_react, user = self.format_reaction(event.message, message_rendered, edition_case, reaction)
+            text_old, edition_react, user = await self.format_reaction(event.message, message_rendered, edition_case, reaction)
 
         text = '|{} {}| {}'.format(action, text_old, edition_react)
 
@@ -626,7 +629,7 @@ class TelegramHandler(object):
             message = self.filters(msg.message)
             message_rendered = await self.render_text(msg, mid, upd_to_webpend=None)
 
-            text_old, edition_react, user = self.format_reaction(msg, message_rendered, edition_case='react-add', reaction=react)
+            text_old, edition_react, user = await self.format_reaction(msg, message_rendered, edition_case='react-add', reaction=react)
 
             text = '|React {}| {}'.format(text_old, edition_react)
 
@@ -665,7 +668,7 @@ class TelegramHandler(object):
 
         msg = event.message if event else message
 
-        user = self.get_irc_user_from_telegram(msg.sender_id)
+        user = await self.get_irc_user_from_telegram(msg.sender_id)
         mid = self.mid.num_to_id_offset(msg.peer_id, msg.id)
         text = await self.render_text(msg, mid, upd_to_webpend, user)
         chan = await self.relay_telegram_message(msg, user, text,
@@ -806,7 +809,7 @@ class TelegramHandler(object):
         if replied:
             replied_msg = replied.message
             cid = self.mid.num_to_id_offset(replied.peer_id, replied.id)
-            replied_user = self.get_irc_user_from_telegram(replied.sender_id)
+            replied_user = await self.get_irc_user_from_telegram(replied.sender_id)
         else:
             replied_id = message.reply_to.reply_to_msg_id
             cid = self.mid.num_to_id_offset(message.peer_id, replied_id)
@@ -845,7 +848,7 @@ class TelegramHandler(object):
         else:
             # if it's from me I want to know who was the destination of a message (user)
             if self.refwd_me and (saved_from_peer := message.fwd_from.saved_from_peer) is not None:
-               secondary_name = self.get_irc_user_from_telegram(saved_from_peer.user_id).irc_nick
+               secondary_name = await self.get_irc_user_from_telegram(saved_from_peer.user_id).irc_nick
             else:
                secondary_name = ''
                space2 = ''
